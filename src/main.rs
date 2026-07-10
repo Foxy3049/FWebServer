@@ -2,23 +2,28 @@ use std::net::{TcpListener, TcpStream};
 use std::io::{self, Write, BufRead};
 use std::fs;
 use std::path::Path;
+use std::env::args;
 use std::thread;
 
-const path: &str = "/home/foxy3049/.fwebserver";
+//const path: &str = "/home/foxy3049/.fwebserver";
 const ver: &str = "0.1";
 
 fn main() -> std::io::Result<()>{
+    let path = std::env::args().nth(1).expect("Direcotry path not set");
     let listener = TcpListener::bind("0.0.0.0:8080")?;
+    let args: Vec<String> = std::env::args().collect();
     println!("Started on {}", listener.local_addr()?);
-
-    if !Path::new(path).is_dir(){
-        fs::create_dir("/home/foxy3049/.fwebserver");
-    }
     
+    if !Path::new(&path).is_dir(){
+        println!("{} doesnt exist or isnt a dir", path);
+        std::process::exit(0);
+    }
+
     for stream in listener.incoming(){
         match stream{
             Ok(stream) => {
-                thread::spawn(|| response(stream));
+                let pathClone = path.clone();
+                thread::spawn(move || response(stream, pathClone.to_string()));
             }
             Err(e) => {
                 eprintln!("Accept error {}", e);
@@ -28,7 +33,7 @@ fn main() -> std::io::Result<()>{
     Ok(())
 }
 
-fn response(mut stream: TcpStream) {
+fn response(mut stream: TcpStream, path: String) {
     let addr = stream.peer_addr().unwrap();
 
     let readerBuf = io::BufReader::new(&mut stream);
@@ -38,7 +43,7 @@ fn response(mut stream: TcpStream) {
     println!("Connection from {}, requested URL {}",addr,request[1]);
 
     if request[1] == "/" {
-        let content = fs::read(path.to_owned() + "/index.html").expect("Failed to open");
+        let content = fs::read(format!("{}/index.html", path.to_owned())).expect("Failed to open");
         stream.write_all(format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n",content.len()).as_bytes());
         stream.write_all(&content);
     }
@@ -52,8 +57,8 @@ fn response(mut stream: TcpStream) {
         stream.write_all(format!("HTTP/1.1 200 OK\r\\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",page.len(),page).as_bytes());
     }
     else{
-        if Path::new(&(path.to_owned() + request[1])).exists(){
-            let content = fs::read(path.to_owned() + request[1]).expect("Failed to open");
+        if Path::new(&(format!("{}{}", path.to_owned(), request[1]))).exists(){
+            let content = fs::read(format!("{}{}", path.to_owned(), request[1])).expect("Failed to open");
             stream.write_all(format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n",content.len()).as_bytes());
             stream.write_all(&content);
         }
