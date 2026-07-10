@@ -1,6 +1,7 @@
 # FWebServer
 ---
 FWebServer is a simple opensource web-server written fully on rust 
+
 ![](https://files.catbox.moe/2f32gx.png)
 
 To build the server, open a terminal and type this in:
