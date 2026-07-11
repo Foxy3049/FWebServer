@@ -13,5 +13,5 @@ cargo build --release
 To run the server:
 ```
 cd target/release
-./fwebserver [Full path to a directory with files]
+./fwebserver [Path to a directory]
 ```
