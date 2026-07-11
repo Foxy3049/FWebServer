@@ -11,7 +11,6 @@ const ver: &str = "0.1";
 fn main() -> std::io::Result<()>{
     let path = std::env::args().nth(1).expect("Direcotry path not set");
     let listener = TcpListener::bind("0.0.0.0:8080")?;
-    let args: Vec<String> = std::env::args().collect();
     println!("Started on {}", listener.local_addr()?);
     
     if !Path::new(&path).is_dir(){
@@ -43,9 +42,15 @@ fn response(mut stream: TcpStream, path: String) {
     println!("Connection from {}, requested URL {}",addr,request[1]);
 
     if request[1] == "/" {
-        let content = fs::read(format!("{}/index.html", path.to_owned())).expect("Failed to open");
-        stream.write_all(format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n",content.len()).as_bytes());
-        stream.write_all(&content);
+        if Path::new(&format!("{}/index.html", path)).is_file(){
+            let content = fs::read(format!("{}/index.html", path.to_owned())).expect("Failed to open");
+            stream.write_all(format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n",content.len()).as_bytes());
+            stream.write_all(&content);
+        }
+        else {
+            let page = format!("If you see this then the server is working!11");
+            stream.write_all(format!("HTTP/1.1 200 OK\r\\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",page.len(),page).as_bytes());
+        }
     }
     else if request[1] == "/server/fox" {
         let page = format!("<style>body {{ background-image: url('https://blob.gifcities.org/gifcities/VCBC4R6HN2RHKQARM75JHXG3AT2KQMDU.gif'); color: white }}</style>
