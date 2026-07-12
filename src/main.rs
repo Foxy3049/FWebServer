@@ -5,7 +5,6 @@ use std::path::Path;
 use std::env::args;
 use std::thread;
 
-//const path: &str = "/home/foxy3049/.fwebserver";
 const ver: &str = "0.1";
 
 fn main() -> std::io::Result<()>{
@@ -15,7 +14,6 @@ fn main() -> std::io::Result<()>{
     
     if !Path::new(&path).is_dir(){
         println!("{} doesnt exist or isnt a dir", path);
-        std::process::exit(0);
     }
 
     for stream in listener.incoming(){
@@ -42,19 +40,19 @@ fn response(mut stream: TcpStream, path: String) {
     println!("Connection from {}, requested URL {}",addr,request[1]);
 
     if request[1] == "/" {
-        if Path::new(&format!("{}/index.html", path)).is_file(){
+        if !Path::new(&format!("{}/index.html", path)).is_file() || !Path::new(&path).is_dir(){
+            let page = format!("If you see this then the index.html is missing");
+            stream.write_all(format!("HTTP/1.1 200 OK\r\\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",page.len(),page).as_bytes());
+        }
+        else {
             let content = fs::read(format!("{}/index.html", path.to_owned())).expect("Failed to open");
             stream.write_all(format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n",content.len()).as_bytes());
             stream.write_all(&content);
         }
-        else {
-            let page = format!("If you see this then the server is working!11");
-            stream.write_all(format!("HTTP/1.1 200 OK\r\\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",page.len(),page).as_bytes());
-        }
     }
     else if request[1] == "/server/fox" {
         let page = format!("<style>body {{ background-image: url('https://blob.gifcities.org/gifcities/VCBC4R6HN2RHKQARM75JHXG3AT2KQMDU.gif'); color: white }}</style>
-        <p>Oh! Hey there!! You have managed to find an easter egg! This easter egg page contains random fox image. (Also, if you're wondering, this easter egg is in EVRY copy of FWebServer.)</p>
+        <p>Oh! Hey there!! You managed to find an easter egg! This easter egg page contains random fox image. (Also, if you're wondering, this easter egg exists in EVRY copy of FWebServer.)</p>
         <img id='foxImg' width=500></img>
         <p><a href='/'>Go to the root page</a> | <a href='/server/fox'>Reload this page</a></p>
         <p>FWebServer/{}, created by Foxy3049 in 2026</p>
