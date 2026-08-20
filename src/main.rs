@@ -5,7 +5,7 @@ use std::path::Path;
 use std::env::args;
 use std::thread;
 
-const ver: &str = "0.1";
+const ver: &str = "0.2";
 
 fn main() -> std::io::Result<()>{
     let path = std::env::args().nth(1).expect("Direcotry path not set");
@@ -60,8 +60,12 @@ fn response(mut stream: TcpStream, path: String) {
         stream.write_all(format!("HTTP/1.1 200 OK\r\\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",page.len(),page).as_bytes());
     }
     else{
-        if Path::new(&(format!("{}{}", path.to_owned(), request[1]))).exists(){
-            let content = fs::read(format!("{}{}", path.to_owned(), request[1])).expect("Failed to open");
+        let base_dir = fs::canonicalize(&path).unwrap();
+        let target_path = base_dir.join(request[1].trim_start_matches('/'));
+        let full_path = fs::canonicalize(target_path);
+
+        if full_path.is_ok() && full_path.as_ref().unwrap().starts_with(&base_dir) {
+            let content = fs::read(full_path.unwrap()).expect("Failed to open");
             stream.write_all(format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n",content.len()).as_bytes());
             stream.write_all(&content);
         }
