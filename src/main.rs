@@ -69,7 +69,7 @@ fn response(mut stream: TcpStream, path: String) {
         _ => {
             let page = format!(
                 "<center><h1>404: Not Found</h1>
-                <p>Requested URL {} was not found on this server.</p>
+                <p>Requested URL '{}' was not found on this server.</p>
                 <a href='/'>Go to the root page</a>
                 <hr>
                 FWebServer/{}</center>",
